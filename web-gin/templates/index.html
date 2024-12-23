@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Album Collection</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e3f2fd;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #1e88e5;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #424242;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #bdbdbd;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #1565c0;
+        }
+        .album {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #eeeeee;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .album p {
+            margin: 5px 0;
+            color: #424242;
+        }
+        #albums, #search-result, #add-result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Album Collection</h1>
+        <h2>View All Albums</h2>
+        <button class="btn" onclick="fetchAlbums()">Fetch Albums</button>
+        <div id="albums"></div>
+
+        <h2>Search Album by ID</h2>
+        <div class="form-group">
+            <label for="search-id">Album ID:</label>
+            <input type="text" id="search-id" placeholder="Enter album ID" autocomplete="off">
+            <button class="btn" onclick="fetchAlbumById()">Search</button>
+        </div>
+        <div id="search-result"></div>
+
+        <h2>Add New Album</h2>
+        <div class="form-group">
+            <label for="album-id">Album ID:</label>
+            <input type="text" id="album-id" placeholder="Enter album ID">
+        </div>
+        <div class="form-group">
+            <label for="album-title">Title:</label>
+            <input type="text" id="album-title" placeholder="Enter album title">
+        </div>
+        <div class="form-group">
+            <label for="album-artist">Artist:</label>
+            <input type="text" id="album-artist" placeholder="Enter album artist">
+        </div>
+        <div class="form-group">
+            <label for="album-price">Price:</label>
+            <input type="number" step="0.01" id="album-price" placeholder="Enter album price">
+        </div>
+        <button class="btn" onclick="addAlbum()">Add Album</button>
+        <div id="add-result"></div>
+    </div>
+
+    <script>
+        const apiUrl = "http://localhost:8080/albums";
+
+        // Fetch all albums
+        async function fetchAlbums() {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            const albumsDiv = document.getElementById("albums");
+            albumsDiv.innerHTML = "";
+
+            data.forEach(album => {
+                albumsDiv.innerHTML += `
+                    <div class="album">
+                        <p><strong>ID:</strong> ${album.id}</p>
+                        <p><strong>Title:</strong> ${album.title}</p>
+                        <p><strong>Artist:</strong> ${album.artist}</p>
+                        <p><strong>Price:</strong> $${album.price}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Fetch an album by ID
+        async function fetchAlbumById() {
+            const id = document.getElementById("search-id").value;
+            if (!id) {
+                alert("Please enter an ID");
+                return;
+            }
+
+            const response = await fetch(`${apiUrl}/${id}`);
+            const data = await response.json();
+            const searchResultDiv = document.getElementById("search-result");
+
+            if (response.ok) {
+                searchResultDiv.innerHTML = `
+                    <div class="album">
+                        <p><strong>ID:</strong> ${data.id}</p>
+                        <p><strong>Title:</strong> ${data.title}</p>
+                        <p><strong>Artist:</strong> ${data.artist}</p>
+                        <p><strong>Price:</strong> $${data.price}</p>
+                    </div>
+                `;
+            } else {
+                searchResultDiv.innerHTML = `<p>${data.message}</p>`;
+            }
+        }
+
+        // Add a new album
+        async function addAlbum() {
+            const id = document.getElementById("album-id").value;
+            const title = document.getElementById("album-title").value;
+            const artist = document.getElementById("album-artist").value;
+            const price = document.getElementById("album-price").value;
+
+            if (!id || !title || !artist || !price) {
+                alert("Please fill out all fields");
+                return;
+            }
+
+            const newAlbum = { id, title, artist, price: parseFloat(price) };
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(newAlbum),
+            });
+
+            const result = await response.json();
+            const addResultDiv = document.getElementById("add-result");
+
+            if (response.ok) {
+                addResultDiv.innerHTML = `<p>Album added successfully: ${JSON.stringify(result)}</p>`;
+                fetchAlbums();
+            } else {
+                addResultDiv.innerHTML = `<p>Failed to add album</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
